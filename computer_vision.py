@@ -11,7 +11,7 @@ font = cv2.FONT_HERSHEY_SIMPLEX
 #color array with blue, green and red in hsv, for the object contour coloring(in bgr)
 
 #obstacle color boundaries(min, max) black, and the color of the contour
-obst_bound = np.array([[0, 0, 0], [255,255,100], [0, 0 , 200]])
+obst_bound = np.array([[0, 0, 0], [255,255,80], [0, 0 , 200]])
 
 #thymio color boundaries(min,max) green and the color of the contour
 robot_bound = np.array([[150, 20, 100], [175,150,255], [0, 200, 0]])
@@ -70,12 +70,12 @@ def image_morph_transform(image):
 
 
 def object_detection(world, segmented_world, object, 
-                    arc_length_precision = 0.05, min_area = 6000, max_area = 550000):
+                    arc_length_precision = 0.01, min_area = 2000, max_area = 40000):
     centers = []
     areas   = []
     objects = []
     
-    contours, hierarchy = cv2.findContours(segmented_world, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv2.findContours(segmented_world, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     for contour in contours:
         #approximate contour
@@ -97,26 +97,22 @@ def object_detection(world, segmented_world, object,
         areas.append(area)
         objects.append(contour_approximation)
 
-        
-
     return centers, objects, areas
 
-def contour_treatment(world, object, centers, areas,  contours, min_dist = 250):
+def contour_treatment(world, object, centers, areas,  contours, min_dist = 300):
     color = [int(object_colors[object][2][0]), int(object_colors[object][2][1]), int(object_colors[object][2][2])]
-    # remove a contour that is too close to another one
+    # first we unnest this attrocity into something more readable
+    #unique_contours = [list(point[0]) for contour in contours for point in contour]
+    #unique_centers = []
+
+
+    if len(centers) > 0:
+        for i in range(len(centers)):
+            cv2.drawContours(world, [contours[i]], -1, tuple(color), thickness= 3)
+            cv2.circle(world, (centers[i][0], centers[i][1]), 3, tuple(color), -1)
+            cv2.putText(world, object, (centers[i][0]-10, centers[i][1]-10), font, 0.5, color, 1, cv2.LINE_AA)
     
-    unique_centers = centers
-    unique_contours = contours
-
-    #unique_centers = [p for p in centers if (euclidean(i,p) > min_dist for i in centers) ]
-
-                
-    if len(unique_centers) > 0:
-        for i in range(len(unique_centers)):
-            cv2.drawContours(world, [unique_contours[i]], -1, tuple(color), thickness= 3)
-            cv2.circle(world, (unique_centers[i][0], unique_centers[i][1]), 3, tuple(color), -1)
-            cv2.putText(world, object, (unique_centers[i][0]-10, unique_centers[i][1]-10), font, 0.5, color, 1, cv2.LINE_AA)
-    return unique_centers,unique_contours
+    return centers,contours
 
 # TODO: redefine robot_contour to be 1D
 def get_robot_position(robot_center, robot_contour):
@@ -129,7 +125,6 @@ def get_robot_position(robot_center, robot_contour):
     dir_vector = robot_contour[0][min_index] - robot_center
     alpha = np.arctan2(dir_vector[1], dir_vector[0])
     return robot_center[0], robot_center[1], alpha
-
 
 
 def computer_vision(frame, object):
@@ -148,7 +143,6 @@ def computer_vision(frame, object):
     gray_world = cv2.cvtColor(masked_world, cv2.COLOR_BGR2GRAY)
 
     segmented_world = image_segmentation(gray_world)
-    centers, objects, areas = object_detection(frame, segmented_world, object)
-    unique_centers, unique_contours = contour_treatment(frame, object, centers, areas, objects)
-    
-    return unique_centers, unique_contours
+    centers, contours, areas = object_detection(frame, segmented_world, object)
+    unique_centers, unique_contours = contour_treatment(frame, object, centers, areas, contours)
+    return centers, contours
