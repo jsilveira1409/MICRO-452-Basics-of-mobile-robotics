@@ -125,7 +125,7 @@ print("Initial state: ", filter.x)
 for i, z in enumerate(zs):
     filter.predict()
     filter.update(z)
-    print("Iteration ", i, " state: ", filter.x)
+    print("Iteration ", i, " stat6e: ", filter.x)
     
 
 
