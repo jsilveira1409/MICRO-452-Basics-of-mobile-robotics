@@ -11,10 +11,10 @@ font = cv2.FONT_HERSHEY_SIMPLEX
 #color array with blue, green and red in hsv, for the object contour coloring(in bgr)
 
 #obstacle color boundaries(min, max) black, and the color of the contour
-obst_bound = np.array([[0, 0, 0], [180,255,60], [0, 0 , 200]])
+obst_bound = np.array([[0, 0, 0], [220,255,60], [0, 0 , 200]])
 
 #thymio color boundaries(min,max) green and the color of the contour
-robot_bound = np.array([[60, 100, 60], [135, 120,255], [0, 200, 0]])
+robot_bound = np.array([[15, 120, 80], [55, 180,125], [0, 200, 0]])
 
 #goal color boundaries(min,max) red and the color of the contour
 goal_bound = np.array([[150, 60, 10], [200, 255,255], [200, 0, 255]])
@@ -26,7 +26,7 @@ object_colors =   {'obstacle'       : obst_bound,
                 }
 
 
-def setup_camera(exposure_time):
+def setup_camera(exposure_time = None):
     #cv2.namedWindow("Computer Vision", cv2.WINDOW_NORMAL)
 
     video_capture = cv2.VideoCapture(0,cv2.CAP_DSHOW)
@@ -35,7 +35,9 @@ def setup_camera(exposure_time):
         exit()
     video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280 )
     video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-    video_capture.set(cv2.CAP_PROP_EXPOSURE,exposure_time)
+    if exposure_time != None:
+        video_capture.set(cv2.CAP_PROP_EXPOSURE, exposure_time)
+    
    
     return video_capture
 
@@ -104,20 +106,6 @@ def object_detection(object, img, img_masked, arc_length_precision = 0.05, min_a
     
     return centers, objects, areas
 
-
-# TODO: redefine robot_contour to be 1D
-def get_robot_position(robot_center, robot_contour):
-    min_dist = 0
-    min_index = 0
-    for i in range(len(robot_contour)):
-        if euclidean(robot_contour[0][i], robot_center) > min_dist:
-            min_dist = euclidean(robot_contour[i], robot_center)
-            min_index = i
-    dir_vector = robot_contour[0][min_index] - robot_center
-    alpha = np.arctan2(dir_vector[1], dir_vector[0])
-    return robot_center[0], robot_center[1], alpha
-
-
 def computer_vision(img, object):
     img_processed = img.copy()
     # 1. convert to hsv color space
@@ -142,30 +130,93 @@ def computer_vision(img, object):
     return centers, contours, img_processed
 
 
-#read image as rgb
-img = cv2.imread('test.jpg')
-img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-fig, ax = plt.subplots(2, 3, figsize=(20, 10))
 
-img_processed = img.copy()
-img_hsv = cv2.cvtColor(img_processed, cv2.COLOR_BGR2HSV)
-img_smooth = image_smoothing(img_hsv)
-mask = object_mask('robot', img_smooth)
-centers, contours, areas = object_detection('robot', img_processed, mask)
+# TODO: redefine robot_contour to be 1D
+def get_robot_position(frame, robot_center, robot_contour):
+    center = np.array(robot_center, dtype="object")
+    contour = np.array(robot_contour, dtype="object")
+    center = np.reshape(np.ravel(center), (-1,2))
+    contour = np.reshape(np.ravel(contour), (-1,2)) 
+    
+    min_dist = 0
+    max_index = 0
+    dir_vector = alpha = 0
+    for i in range(len(contour)):
+        if euclidean(contour[i], center[0]) > min_dist:
+            min_dist = euclidean(contour[i], center[0])
+            max_index = i
+    dir_vector = contour[max_index] - center[0]
+    
+    alpha = np.arctan2(dir_vector[1], dir_vector[0])
+    cv2.arrowedLine(frame, center[0], contour[max_index], (0, 0, 255), 2)
 
-#plot images
-ax[0,0].imshow(img)
-ax[0,0].set_title('Original Image')
-ax[0,1].imshow(img_hsv)
-ax[0,1].set_title('HSV Image')
-ax[0,2].imshow(img_smooth)
-ax[0,2].set_title('Smoothed Image')
-ax[1,0].imshow(mask)
-ax[1,0].set_title('Mask')
-ax[1,1].imshow(img_processed)
-ax[1,1].set_title('Segmented Image')
-ax[1,2].imshow(img_processed)
-ax[1,2].set_title('Segmented Image')
+    return dir_vector, alpha
 
-fig.tight_layout()
-fig.savefig('data1.jpeg')
+def cv_start(show_image = False):
+    video_capture = setup_camera()
+    # read first 100 frames, to give time to the camera to adapt to the light
+    video_capture.read(200)
+
+    # read frame for further analysis
+    ret, frame = video_capture.read()
+
+    while(True):
+        # detect each type of object
+        robot_center, robot_contour, frame_robot = computer_vision(frame, 'robot')
+        obst_centers, obst_contours, frame_obst = computer_vision(frame, 'obstacle')
+        goal_center, goal_contours, frame_goal = computer_vision(frame, 'goal')
+        if len(robot_center) == 1:
+            break
+        else:
+            ret, frame = video_capture.read()
+
+    # get robot direction
+    dir, alpha = get_robot_position(frame_robot, robot_center, robot_contour)
+    
+    if show_image:
+        # show the frames
+        cv2.imshow('Computer Vision', frame_robot)
+        while True:
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+        
+        # Release the capture
+        video_capture.release() 
+        cv2.destroyAllWindows()
+        
+    position = [robot_center[0][0], robot_center[0][1], alpha]
+    return position
+
+position = cv_start()
+print(position)
+
+
+#
+##read image as rgb
+#img = cv2.imread('test.jpg')
+#img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+#fig, ax = plt.subplots(2, 3, figsize=(20, 10))
+#
+#img_processed = img.copy()
+#img_hsv = cv2.cvtColor(img_processed, cv2.COLOR_BGR2HSV)
+#img_smooth = image_smoothing(img_hsv)
+#mask = object_mask('robot', img_smooth)
+#centers, contours, areas = object_detection('robot', img_processed, mask)
+#
+##plot images
+#ax[0,0].imshow(img)
+#ax[0,0].set_title('Original Image')
+#ax[0,1].imshow(img_hsv)
+#ax[0,1].set_title('HSV Image')
+#ax[0,2].imshow(img_smooth)
+#ax[0,2].set_title('Smoothed Image')
+#ax[1,0].imshow(mask)
+#ax[1,0].set_title('Mask')
+#ax[1,1].imshow(img_processed)
+#ax[1,1].set_title('Segmented Image')
+#ax[1,2].imshow(img_processed)
+#ax[1,2].set_title('Segmented Image')
+#
+#fig.tight_layout()
+#fig.savefig('data1.jpeg')
+#
