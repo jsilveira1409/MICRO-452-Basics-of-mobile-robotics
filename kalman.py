@@ -1,15 +1,116 @@
 from numpy.random import randn
 import matplotlib.pyplot as plt
 import numpy as np
-from filterpy.kalman import KalmanFilter
-from filterpy.common import Q_discrete_white_noise
-from filterpy.stats import plot_covariance_ellipse
-from scipy.linalg import block_diag
+import copy
+
+class kalman_filter():
+    
+    def __init__(self, x0,vx0, y0, vy0, theta0, vtheta0, dt=1) -> None:
+        # initial state vector
+        self.x0 = np.array([x0, vx0, y0, vy0, theta0, vtheta0])
+        # state variable
+        self.x = np.array([x0, vx0, y0, vy0, theta0, vtheta0])
+        # posterior state variable
+        self.x_post = np.array([x0, vx0, y0, vy0, theta0, vtheta0])
+        self.P_post = np.zeros((6,6))
+        # state transition matrix 
+        self.F = np.array([ [1, dt,  0,  0,  0,  0],
+                            [0,  1,  0,  0,  0,  0],
+                            [0,  0,  1,  dt, 0,  0],
+                            [0,  0,  0,  1,  0,  0],
+                            [0,  0,  0,  0,  1,  dt],
+                            [0,  0,  0,  0,  0,  1]])
+        # measurement matrix 
+        self.H = np.array([ [1, 0, 0, 0, 0, 0],
+                            [0, 0, 1, 0, 0, 0], 
+                            [0, 0, 0, 0, 1, 0]])
+        # measurement noise covariance
+        self.R = np.array([ [10,  0,    0],
+                            [0,  10,    0],
+                            [0,   0,   10]])
+        # process noise covariance 
+        self.Q = 0.01 * np.array([[0.25, 0.5,    0,    0,    0,   0],
+                                 [0.5,    1,    0,    0,    0,   0],
+                                 [  0,    0, 0.25,  0.5,    0,   0],
+                                 [  0,    0,  0.5,    1,    0,   0],
+                                 [  0,    0,    0,    0, 0.25, 0.5],
+                                 [  0,    0,    0,    0,  0.5,   1]])
+        # state covariance matrix
+        # since we are uncertain about the initial state,
+        # we set the initial state covariance matrix to a high value
+        # which is equivalent of increasing the uncertainty
+        self.P = 500 * np.array([  [1, 0, 0, 0, 0, 0],
+                                   [0, 1, 0, 0, 0, 0],       
+                                   [0, 0, 1, 0, 0, 0],
+                                   [0, 0, 0, 1, 0, 0],
+                                   [0, 0, 0, 0, 1, 0],
+                                   [0, 0, 0, 0, 0, 1]])
+        # control input matrix
+        self.B = np.array([ [1, 0, 0],
+                            [0, 0, 0],
+                            [0, 1, 0],
+                            [0, 0, 0],
+                            [0, 0, 1],
+                            [0, 0, 0]])
+        # control input
+        self.u = np.array([0, 0, 0]).T
+        # measurement
+        self.z = np.array([0, 0, 0]).T
+        # residual between measurement and prediction
+        self.y = np.array([0, 0, 0]).T
+        # kalman gain
+        self.K = np.zeros((6, 3))
+        pass
+  
+
+    def predict(self):
+        # extrapolate state
+        self.x = np.dot(self.F, self.x) + np.dot(self.B, self.u)
+        # extrapolate state covariance(uncertanity?)
+        self.P = np.dot(np.dot(self.F, self.P), self.F.T) + self.Q
+
+        return self.x, self.P  
 
 
-R_std = 1
-R_theta_x = R_theta_y = 0.1
-R_theta_theta = 0.1
+    def update(self, z):
+        # residual
+        self.y = z - self.H.dot(self.x)
+        # kalman gain
+        self.K = np.dot(self.P, self.H.T).dot(np.linalg.inv(np.dot(np.dot(self.H, self.P), self.H.T) + self.R))
+        # state update
+        self.x = self.x + self.K.dot(self.y)
+        # state covariance update
+        tmp = np.eye(6) - self.K.dot(self.H)
+        self.P = np.dot(tmp.dot(self.P),tmp.T) + self.K.dot(self.R).dot(self.K.T)
+        # save posterioir state and measurement
+        self.P_post = copy.deepcopy(self.P)
+        self.x_copy = copy.deepcopy(self.x)
+        self.z = copy.deepcopy(z)
+
+        return self.x, self.P
+    
+
+    # processes a sequence of measurements
+    def filter(self, z):
+        nb_measurements = z.shape[1]
+        dim_x = self.x.shape[0]
+        means = np.zeros((nb_measurements, dim_x))
+        means_prediction = np.zeros((nb_measurements, dim_x))        
+
+        cov = np.zeros((nb_measurements, dim_x, dim_x))
+        cov_prediction = np.zeros((nb_measurements, dim_x, dim_x))
+
+        for i, (z, F, Q, H, R, B, u) in enumerate(zip(self.z, self.F, self.Q, self.H, self.R, self.B, self.u)):
+            self.update(z)
+            means[i, :] = self.x
+            cov[i, :, :] = self.P
+
+            self.predict()
+            means_prediction[i, :] = self.x
+            cov_prediction[i, :, :] = self.P
+
+        return means, cov, means_prediction, cov_prediction
+
 
 
 class sensor_position():
@@ -29,101 +130,21 @@ class sensor_position():
         return [self.pos[0] + randn()*self.noise_std, 
                 self.pos[1] + randn()*self.noise_std,
                 self.angle + randn()*self.noise_std]
-
-def kalman_setup(dt = 1.0, x0 = 1.0, y0=1.0, th0=0.):
     
-    return filter
-
-
-def simulate_mouvement(N = 10, init_pos = (0,0), init_vel = (1,1)):
+def simulate_mouvement(N = 10, R_std = 2, init_pos = (0,0), init_vel = (1,1)):
     sensor = sensor_position(init_pos, init_vel, noise_std=R_std)
     zs = np.array([sensor.read() for _ in range(N)])
     return zs
 
-def plot_confidence(mu, cov, std = 3):
-    for x, P in zip(mu, cov):
-        # covariance of x and y
-        cov = np.array([[P[0, 0], P[2, 0]], 
-                        [P[0, 2], P[2, 2]]])
-        mean = (x[0, 0], x[2, 0])
-        plot_covariance_ellipse(mean, cov=cov, fc='g', std=std, alpha=0.2)
 
 
+float_formatter = "{:.4f}".format
+np.set_printoptions(formatter={'float_kind':float_formatter})
 
-
-dt = 1.0
-x0 = 1.0
-y0 = 1.0
-th0 = 0.
-
-# 6 state variables to track : x, y, theta, vx, vy, omega
-# 3 measurements : x, y, theta
-filter = KalmanFilter(dim_x=6, dim_z=3, dim_u=3)
-# STEP 1
-# state transition matrix
-filter.F = np.array([[1, 0, 0,  dt, 0, 0],
-                        [0, 1, 0,  0, dt, 0],
-                        [0, 0, 1,  0, 0, dt],
-                        [0, 0, 0,  1, 0, 0],
-                        [0, 0, 0,  0, 1, 0],
-                        [0, 0, 0,  0, 0, 1]])
-# STEP 2
-# no initial control input
-
-# control input function
-filter.B = np.eye(6)
-
-# STEP 3
-# measurement function. z =(zx, zy, ztheta)
-filter.H = np.array([[1, 0, 0, 0, 0, 0, 0],
-                        [0, 1, 0, 0, 0, 0, 0],
-                        [0, 0, 1, 0, 0, 0, 0]])
-# STEP 4
-# we assume that the error is independant in x and y, therefore no correlation 
-# between the two. However, we assume that the error is correlated in theta as 
-# it depends on the x and y translation.
-filter.R = np.array([[    R_std,         0,     R_theta_x],
-                        [        0,     R_std,     R_theta_y],
-                        [R_theta_x, R_theta_y, R_theta_theta]])
-
-# STEP 5
-# process noise covariance matrix
-
-# values for the Q matrix
-# q_xth, q_xvx, q_xvth, q_vxth, qvxvth
-# q_yth, q_yvy, q_yvth, q_vyth, qvyvth
-# q_thvth
-q = [[0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0],
-        [0]]
-filter.Q = np.array([[0,        0,       q[0][0], q[0][1],  0,       q[0][2]],
-                        [0,        0,       q[1][0], 0,        q[1][1], q[1][2]],
-                        [q[0][0],  q[1][0], 0,       q[0][3],  q[1][3], q[2][0]],
-                        [q[0][1],  0,       q[0][3], 0,        0,       q[0][4]],
-                        [0,        q[1][1], q[1][3], 0,        0,       q[1][4]],
-                        [q[0][2],  q[1][2], q[2][0], q[0][4],  q[1][4], 0]])
-
-# STEP 6
-# initial state, the robot is not moving at the beginning.
-# x, y, and theta is given by CV, vx, vy and vtheta are 0.
-filter.x = np.array([x0, y0, th0, 0, 0, 0])
-# initial covariance matrix 
-# TODO: not sure how to set this up, as it is a random guess, i think
-filter.P = np.eye(6) * 100.
-
+sensor = sensor_position()
 zs = simulate_mouvement()
 
-(mu, cov, _, _) = filter.batch_filter(x = filter.x, zs = zs)
-#plot_confidence(mu,cov)
-##
-###plot results
-#plt.plot(mu[:, 0], mu[:, 2], label='filter', marker='o', color='r')
-##
-#plt.plot(zs[:, 0], zs[:, 1], label='measurements', color='g')
-#plt.legend(loc=2)
-##
-#plt.grid()
-#plt.show()
-
+filter = kalman_filter(1, 1, 1, 1, 1, 1)
+means, cov, pred_means, pred_cov = filter.filter(zs)
 
 
