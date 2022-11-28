@@ -4,6 +4,8 @@ from collections import namedtuple
 Point = namedtuple('Point', ['x', 'y', 'num'])
 INF = 8000
 
+#----------------------------------------- GRAPH CONSTRUCTION ---------------------------------------------------------------------------
+
 def euclid_dist(point1, point2):
     return np.sqrt((point1[0]-point2[0])**2 + (point1[1]-point2[1])**2)
 
@@ -93,7 +95,7 @@ def print_list(l):
     for element in l:
         print(element)
 
-#------------------------------------------------------------------------------------------------------------------------------------
+#---------------------------------------------------- DIJKSTRA ----------------------------------------------------------------------
 
 def get_weight(a,b,graph):
     #selecting vertex with the smallest number of connections
@@ -139,14 +141,6 @@ def dijkstra(graph):
     
     return distances,predecessor
 
-#------------------------------------------------------------------------------------------------------------------------------------
-'''def give_path(idx_e, idx_s, pred):
-    i = idx_e
-    path_num = []
-    while(i != idx_s):
-        path_num.append(i)
-        i = pred[i]
-    return path_num'''
 
 def construct_path(start,end,coordlist,pred):
     i = len(pred)-1
@@ -163,15 +157,26 @@ def construct_path(start,end,coordlist,pred):
     coord.reverse()
     return coord
 
-#------------------------------------------------------------------------------------------------------------------------------------
+#----------------------------------------------- MAIN FUNCTION ------------------------------------------------------------------------
+def compute_shortest_path(input,start,end):
+    flat = [p for obs in input for p in obs]
+    number_vertices(input_ar)
+    g = construct_graph(input_ar,A,B)
+    d,pred = dijkstra(g)
+    path = construct_path(A,B,flat,pred)
+    return path
+
+#----------------------------------------------- INPUTS ------------------------------------------------------------------------
 input_ar = [[[5.0,3.0],[8,3],[8,6],[5,4]],
             [[8,13],[7,12],[8,10],[9,11]],
             [[4,9],[2,10],[4,12]]]
 
-flat = [p for obs in input_ar for p in obs]
 A = [1,1]
-B = [9,14]            
+B = [9,14]    
 
+#----------------------------------------------- TEST STUFF ------------------------------------------------------------------------
+
+flat = [p for obs in input_ar for p in obs]
 number_vertices(input_ar)
 g = construct_graph(input_ar,A,B)
 d,pred = dijkstra(g)
