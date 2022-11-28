@@ -71,7 +71,6 @@ class kalman_filter():
 
         return self.x, self.P  
 
-
     def update(self, z):
         # residual
         self.y = z - self.H.dot(self.x)
@@ -89,29 +88,6 @@ class kalman_filter():
 
         return self.x, self.P
     
-
-    # processes a sequence of measurements
-    def filter(self, z):
-        nb_measurements = z.shape[1]
-        dim_x = self.x.shape[0]
-        means = np.zeros((nb_measurements, dim_x))
-        means_prediction = np.zeros((nb_measurements, dim_x))        
-
-        cov = np.zeros((nb_measurements, dim_x, dim_x))
-        cov_prediction = np.zeros((nb_measurements, dim_x, dim_x))
-
-        for i, (z, F, Q, H, R, B, u) in enumerate(zip(self.z, self.F, self.Q, self.H, self.R, self.B, self.u)):
-            self.update(z)
-            means[i, :] = self.x
-            cov[i, :, :] = self.P
-
-            self.predict()
-            means_prediction[i, :] = self.x
-            cov_prediction[i, :, :] = self.P
-
-        return means, cov, means_prediction, cov_prediction
-
-
 
 class sensor_position():
     def __init__(self, pos=(0,0), vel=(0,0),angle=0,vel_angle=0, noise_std = 1) -> None:
@@ -138,13 +114,20 @@ def simulate_mouvement(N = 10, R_std = 2, init_pos = (0,0), init_vel = (1,1)):
 
 
 
-float_formatter = "{:.4f}".format
+float_formatter = "{:.2f}".format
 np.set_printoptions(formatter={'float_kind':float_formatter})
 
 sensor = sensor_position()
-zs = simulate_mouvement()
+zs = simulate_mouvement(N = 50, R_std=1)
 
-filter = kalman_filter(1, 1, 1, 1, 1, 1)
-means, cov, pred_means, pred_cov = filter.filter(zs)
+filter = kalman_filter(1, 1, 1, 0, 0, 0)
+print("Initial state: ", filter.x)
+for i, z in enumerate(zs):
+    filter.predict()
+    filter.update(z)
+    print("Iteration ", i, " state: ", filter.x)
+    
+
+
 
 
