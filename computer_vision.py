@@ -11,10 +11,10 @@ font = cv2.FONT_HERSHEY_SIMPLEX
 #color array with blue, green and red in hsv, for the object contour coloring(in bgr)
 
 #obstacle color boundaries(min, max) black, and the color of the contour
-obst_bound = np.array([[0, 0, 0], [220,255,60], [0, 0 , 200]])
+obst_bound = np.array([[0, 0, 0], [220,255,100], [0, 0 , 200]])
 
 #thymio color boundaries(min,max) green and the color of the contour
-robot_bound = np.array([[15, 120, 80], [55, 180,125], [0, 200, 0]])
+robot_bound = np.array([[15, 150, 150], [55, 255,220], [0, 200, 0]])
 
 #goal color boundaries(min,max) red and the color of the contour
 goal_bound = np.array([[150, 60, 10], [200, 255,255], [200, 0, 255]])
@@ -67,7 +67,7 @@ def image_morph_transform(image):
     return transformed_world
 
 
-def object_detection(object, img, img_masked, arc_length_precision = 0.05, min_area = 3000, max_area = 400000):
+def object_detection(object, img, img_masked, show_image = False, arc_length_precision = 0.05, min_area = 3000, max_area = 400000):
     centers = []
     areas   = []
     objects = []
@@ -97,16 +97,16 @@ def object_detection(object, img, img_masked, arc_length_precision = 0.05, min_a
         objects.append(contour_approximation)
 
 
-
-    if len(centers) > 0:
-        for i in range(len(centers)):
-            cv2.drawContours(img, [objects[i]], -1, tuple(color), thickness= 3)
-            cv2.circle(img, (centers[i][0], centers[i][1]), 3, tuple(color), -1)
-            cv2.putText(img, object, (centers[i][0]-10, centers[i][1]-10), font, 0.5, color, 1, cv2.LINE_AA)
-    
+    if show_image:
+        if len(centers) > 0:
+            for i in range(len(centers)):
+                cv2.drawContours(img, [objects[i]], -1, tuple(color), thickness= 3)
+                cv2.circle(img, (centers[i][0], centers[i][1]), 3, tuple(color), -1)
+                cv2.putText(img, object, (centers[i][0]-10, centers[i][1]-10), font, 0.5, color, 1, cv2.LINE_AA)
+        
     return centers, objects, areas
 
-def computer_vision(img, object):
+def computer_vision(img, object, show_image = False):
     img_processed = img.copy()
     # 1. convert to hsv color space
     # it is easier to filter colors in the HSV color-space.
@@ -125,7 +125,8 @@ def computer_vision(img, object):
     #im_segmented = image_segmentation(im_masked_gray)
 
     # 5. detect objects
-    centers, contours, areas = object_detection(object, img_processed, mask)
+    # TODO: not sure about passing the original frame to it, as it would be used to process the other objects
+    centers, contours, areas = object_detection(object, img, mask, show_image)
 
     return centers, contours, img_processed
 
@@ -152,8 +153,8 @@ def get_robot_position(frame, robot_center, robot_contour):
 
     return dir_vector, alpha
 
-def cv_start(show_image = False):
-    video_capture = setup_camera()
+def cv_start(exposure = None, show_image = False):
+    video_capture = setup_camera(exposure)
     # read first 100 frames, to give time to the camera to adapt to the light
     video_capture.read(200)
 
@@ -162,20 +163,20 @@ def cv_start(show_image = False):
 
     while(True):
         # detect each type of object
-        robot_center, robot_contour, frame_robot = computer_vision(frame, 'robot')
-        obst_centers, obst_contours, frame_obst = computer_vision(frame, 'obstacle')
-        goal_center, goal_contours, frame_goal = computer_vision(frame, 'goal')
+        robot_center, robot_contour, frame_robot = computer_vision(frame, 'robot', show_image)
+        obst_centers, obst_contours, frame_obst = computer_vision(frame, 'obstacle', show_image)
+        goal_center, goal_contours, frame_goal = computer_vision(frame, 'goal', show_image)
         if len(robot_center) == 1:
             break
         else:
             ret, frame = video_capture.read()
 
     # get robot direction
-    dir, alpha = get_robot_position(frame_robot, robot_center, robot_contour)
+    dir, alpha = get_robot_position(frame, robot_center, robot_contour)
     
     if show_image:
         # show the frames
-        cv2.imshow('Computer Vision', frame_robot)
+        cv2.imshow('Computer Vision', frame)
         while True:
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
@@ -187,7 +188,7 @@ def cv_start(show_image = False):
     position = [robot_center[0][0], robot_center[0][1], alpha]
     return position
 
-position = cv_start()
+position = cv_start(exposure=-6, show_image=True)
 print(position)
 
 
