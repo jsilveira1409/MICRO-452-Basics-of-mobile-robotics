@@ -176,20 +176,19 @@ def compute_shortest_path(input_ar,start,end):
     g = construct_graph(input_ar,start,end)
     d,pred = dijkstra(g)
     path = construct_path(start,end,flat,pred)
-    print(path)
     return path
 
 #----------------------------------------------- INPUTS ------------------------------------------------------------------------
-input_ar = [[[5.0,3.0],[8,3],[8,6],[5,4]],
-            [[8,13],[7,12],[8,10],[9,11]],
-            [[4,9],[2,10],[4,12]]]
-
-A = [1,1]
-B = [9,14]    
+#input_ar = [[[5.0,3.0],[8,3],[8,6],[5,4]],
+#            [[8,13],[7,12],[8,10],[9,11]],
+#            [[4,9],[2,10],[4,12]]]
+#
+#A = [1,1]
+#B = [9,14]    
 
 #----------------------------------------------- TEST STUFF ------------------------------------------------------------------------
 
-compute_shortest_path(input_ar,A,B)
+#compute_shortest_path(input_ar,A,B)
 '''flat = [p for obs in input_ar for p in obs]
 number_vertices(input_ar)
 g = construct_graph(input_ar,A,B)

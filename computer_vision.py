@@ -11,13 +11,13 @@ font = cv2.FONT_HERSHEY_SIMPLEX
 #color array with blue, green and red in hsv, for the object contour coloring(in bgr)
 
 #obstacle color boundaries(min, max) black, and the color of the contour
-obst_bound = np.array([[0, 0, 0], [220,255,100], [0, 0 , 200]])
+obst_bound = np.array([[0, 0, 0], [180,255,60], [0, 0 , 200]])
 
 #thymio color boundaries(min,max) green and the color of the contour
-robot_bound = np.array([[15, 150, 150], [55, 255,220], [0, 200, 0]])
+robot_bound = np.array([[10, 100, 150], [55, 255,220], [0, 200, 0]])
 
 #goal color boundaries(min,max) red and the color of the contour
-goal_bound = np.array([[150, 60, 10], [200, 255,255], [200, 0, 255]])
+goal_bound = np.array([[140, 100, 100], [210, 255,255], [200, 0, 255]])
 
 
 object_colors =   {'obstacle'       : obst_bound, 
@@ -37,9 +37,27 @@ def setup_camera(exposure_time = None):
     video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
     if exposure_time != None:
         video_capture.set(cv2.CAP_PROP_EXPOSURE, exposure_time)
-    
-   
+    else:
+        video_capture.set(cv2.CAP_PROP_AUTO_EXPOSURE,3)   
     return video_capture
+
+def read_camera(exp = None):
+    vid = setup_camera(exposure_time = exp)
+    
+    while(True):
+        ret, frame = vid.read()
+        if ret == False:
+            print("Cannot read frame")
+            exit()
+        cv2.imshow("frame",frame)
+        # Press Q on keyboard to exit
+        if cv2.waitKey(25) & 0xFF == ord('q'):
+            break
+    
+    vid.release()
+    # Closes all the frames
+    cv2.destroyAllWindows()
+
 
 def image_smoothing(world, sc = 1000, ss = 3000, diameter = 20):
     smooth_world = cv2.bilateralFilter( world, d=diameter, sigmaColor = sc, sigmaSpace = ss)
@@ -153,13 +171,8 @@ def get_robot_position(frame, robot_center, robot_contour):
 
     return dir_vector, alpha
 
-def get_obstacle_position(frame, obst_center, obst_contour):
-    center = np.array(obst_center, dtype="object")
-    contour = np.array(obst_contour, dtype="object")
-    center = np.reshape(np.ravel(center), (-1,2))
-    contour = np.reshape(np.ravel(contour), (-1,2)) 
 
-    return contour
+
 
 def get_goal_position(frame, goal_center, goal_contour):
     center = np.array(goal_center, dtype="object")
@@ -168,6 +181,14 @@ def get_goal_position(frame, goal_center, goal_contour):
     contour = np.reshape(np.ravel(contour), (-1,2)) 
 
     return center, contour
+
+def format_contour(contours):
+    c = []
+    for contour in contours:
+        L = contour.ravel()
+        it = iter(L)
+        c.append(list(zip(it, it)))
+    return c
 
 
 
@@ -181,45 +202,36 @@ def cv_start(exposure = None, show_image = False):
 
     while(True):
         # detect each type of object
-        robot_center, robot_contour, frame_robot = computer_vision(frame, 'robot', show_image)
-        obst_centers, obst_contours, frame_obst = computer_vision(frame, 'obstacle', show_image)
-        goal_center, goal_contours, frame_goal = computer_vision(frame, 'goal', show_image)
-        if len(robot_center) == 1:
+        robot_center, robot_contour, _ = computer_vision(frame, 'robot', show_image)
+        obst_centers, obst_contours, _ = computer_vision(frame, 'obstacle', show_image)
+        goal_center, goal_contours, _ = computer_vision(frame, 'goal', show_image)
+        if len(robot_center) == 1 and len(goal_center) == 1:
             break
         else:
             ret, frame = video_capture.read()
-
+    obst_contours = np.array(obst_contours, dtype=object)
     # get robot direction
     dir, alpha = get_robot_position(frame, robot_center, robot_contour)
-    # get obstacle edges position
-    obstacles_edges = get_obstacle_position(frame, obst_centers, obst_contours)
-    # get goal edges position and center
-    goal_center, goal_edges = get_goal_position(frame, goal_center, goal_contours)
-
-    if show_image:
-        # show the frames
-        cv2.imshow('Computer Vision', frame)
-        while True:
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-        
-        # Release the capture
-        video_capture.release() 
-        cv2.destroyAllWindows()
+    
+    #if show_image:
+    #    # show the frames
+    #    cv2.imshow('Computer Vision', frame)
+    #    while True:
+    #        if cv2.waitKey(1) & 0xFF == ord('q'):
+    #            break
+    #    
+    #    # Release the capture
+    #    video_capture.release() 
+    #    cv2.destroyAllWindows()
         
     robot_pos = [robot_center[0][0], robot_center[0][1], alpha]
-    return robot_pos, obstacles_edges
-
-position = cv_start(exposure=-6, show_image=True)
-print(position)
+    return obst_contours, robot_pos, goal_center[0], frame
 
 
-
-
-
-
-
-
+def draw_path(frame, path):
+    for i in range(len(path)-1):
+        cv2.arrowedLine(frame, path[i], path[i+1], (200, 0, 0), 2)
+    return frame
 
 #
 ##read image as rgb
