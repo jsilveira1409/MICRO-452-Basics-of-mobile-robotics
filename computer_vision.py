@@ -153,6 +153,24 @@ def get_robot_position(frame, robot_center, robot_contour):
 
     return dir_vector, alpha
 
+def get_obstacle_position(frame, obst_center, obst_contour):
+    center = np.array(obst_center, dtype="object")
+    contour = np.array(obst_contour, dtype="object")
+    center = np.reshape(np.ravel(center), (-1,2))
+    contour = np.reshape(np.ravel(contour), (-1,2)) 
+
+    return contour
+
+def get_goal_position(frame, goal_center, goal_contour):
+    center = np.array(goal_center, dtype="object")
+    contour = np.array(goal_contour, dtype="object")
+    center = np.reshape(np.ravel(center), (-1,2))
+    contour = np.reshape(np.ravel(contour), (-1,2)) 
+
+    return center, contour
+
+
+
 def cv_start(exposure = None, show_image = False):
     video_capture = setup_camera(exposure)
     # read first 100 frames, to give time to the camera to adapt to the light
@@ -173,7 +191,11 @@ def cv_start(exposure = None, show_image = False):
 
     # get robot direction
     dir, alpha = get_robot_position(frame, robot_center, robot_contour)
-    
+    # get obstacle edges position
+    obstacles_edges = get_obstacle_position(frame, obst_centers, obst_contours)
+    # get goal edges position and center
+    goal_center, goal_edges = get_goal_position(frame, goal_center, goal_contours)
+
     if show_image:
         # show the frames
         cv2.imshow('Computer Vision', frame)
@@ -185,11 +207,18 @@ def cv_start(exposure = None, show_image = False):
         video_capture.release() 
         cv2.destroyAllWindows()
         
-    position = [robot_center[0][0], robot_center[0][1], alpha]
-    return position
+    robot_pos = [robot_center[0][0], robot_center[0][1], alpha]
+    return robot_pos, obstacles_edges
 
 position = cv_start(exposure=-6, show_image=True)
 print(position)
+
+
+
+
+
+
+
 
 
 #
