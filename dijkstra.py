@@ -1,8 +1,18 @@
 import numpy as np
 from collections import namedtuple 
 
-Point = namedtuple('Point', ['x', 'y', 'num'])
 INF = 8000
+THYMIO_RADIUS = 4.5
+
+#----------------------------------------- AUGMENTING OBSTACLES ---------------------------------------------------------------------------
+def augment(input_points):
+    for o in input_points :
+        o_n = np.array(o)
+        center = np.mean(o_n,axis=0)
+        o_n = o_n + THYMIO_RADIUS*(o_n-center)/np.transpose([np.linalg.norm(o_n-center, axis=1),np.linalg.norm(o_n-center, axis=1)])
+        o = list(o_n)
+    return 
+
 
 #----------------------------------------- GRAPH CONSTRUCTION ---------------------------------------------------------------------------
 
@@ -159,11 +169,12 @@ def construct_path(start,end,coordlist,pred):
 
 #----------------------------------------------- MAIN FUNCTION ------------------------------------------------------------------------
 def compute_shortest_path(input,start,end):
+    augment(input)
     flat = [p for obs in input for p in obs]
     number_vertices(input_ar)
-    g = construct_graph(input_ar,A,B)
+    g = construct_graph(input_ar,start,end)
     d,pred = dijkstra(g)
-    path = construct_path(A,B,flat,pred)
+    path = construct_path(start,end,flat,pred)
     return path
 
 #----------------------------------------------- INPUTS ------------------------------------------------------------------------
@@ -176,10 +187,11 @@ B = [9,14]
 
 #----------------------------------------------- TEST STUFF ------------------------------------------------------------------------
 
-flat = [p for obs in input_ar for p in obs]
+compute_shortest_path(input_ar,A,B)
+'''flat = [p for obs in input_ar for p in obs]
 number_vertices(input_ar)
 g = construct_graph(input_ar,A,B)
 d,pred = dijkstra(g)
 print("PATH")
 path = construct_path(A,B,flat,pred)
-print(path)
+print(path)'''
