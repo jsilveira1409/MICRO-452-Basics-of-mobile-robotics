@@ -1,7 +1,7 @@
 import numpy as np
 from collections import namedtuple 
 
-INF = 8000
+INF = 80000
 THYMIO_RADIUS = 4.5
 
 #----------------------------------------- AUGMENTING OBSTACLES ---------------------------------------------------------------------------
@@ -14,7 +14,6 @@ def augment(input_points):
         modif.append(o_n.tolist())
     return modif
     
-
 
 #----------------------------------------- GRAPH CONSTRUCTION ---------------------------------------------------------------------------
 
