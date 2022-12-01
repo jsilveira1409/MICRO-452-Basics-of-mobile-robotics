@@ -1,36 +1,42 @@
+import numpy as np
+import math
+import time
 from computer_vision import *
 from dijkstra import compute_shortest_path
-center =[]
-area =[]
-object =[]
-framerate = 30
-time_prev = 0
+from kalman import kalman_filter
 
-
-#start by seting up the computer vision
-obst, robot, goal, frame= cv_start(exposure=-8, show_image= True)
-
+#read_camera(-7)
+cv_successful, obst, robot, goal, frame = cv_start(show_image= True, exposure=-7)
+plt.imshow(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 obst = format_contour(obst)
-print("obstacles")
-for o in obst:
-    print(o)
+print(robot[:2])
 
-print("robot")
-print(robot)
-print("goal")
-print(goal)
+#robot = pixel_to_metric(robot[:2])
+print("cv successful: ", cv_successful)
+print("robot : ", robot )
+print("goal  : ", goal)
 
-# execute dijkstra
-start = [robot[0],robot[1]]
-path = compute_shortest_path(obst, start, goal)
-path = np.rint(path).astype(int)
 
-print("path")
-for p in path:
-    print(p)
 
-draw_path(frame, path)
+if cv_successful:
+    # execute dijkstra
+    start = [robot[0],robot[1]]
+    print(start)
+    print(goal)
+    path = compute_shortest_path(obst, start, goal)
+    path = np.rint(path).astype(int)
 
-cv2.imshow('frame',frame)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+    print("path")
+    for p in path:
+        print(p)
+
+    draw_path(frame, path)
+
+plt.imshow(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+
+if cv_successful:
+    float_formatter = "{:.2f}".format
+    np.set_printoptions(formatter={'float_kind':float_formatter})
+    filter = kalman_filter(robot[0], 0, robot[0], 0, robot[2], 0)
+    print("Initial state: ", filter.x)
+plt.show()

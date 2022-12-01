@@ -100,18 +100,26 @@ class kalman_filter():
 
         return self.x, self.P
     
-    def plot(self, y_err, x_err):
-        
-        plt.figure()
-        plt.plot(self.x_upd_hist[0,:], self.x_upd_hist[2,:], 'r', label='state', alpha=0.5)
-        plt.errorbar(self.z_hist[0,:], self.z_hist[1,:], label='measurement', yerr=y_err, xerr=x_err,  fmt='.k', alpha=0.5)
-        plt.plot(self.x_pred_hist[0,:], self.x_pred_hist[2,:], 'g', label='prediction', alpha=0.5)
-        plt.quiver(self.z_hist[0,:], self.z_hist[1,:], np.cos(self.z_hist[2,:]),  np.sin(self.z_hist[2,:]), alpha=0.6, width = 0.002,scale=25, headwidth=3, headlength=3, color='k')
-        plt.legend()
-        plt.grid()
-        plt.tight_layout()
-        plt.show()
-        pass
+    def plot(self, y_err, x_err, fig=None, ax=None):
+        if fig is None or ax is None:
+            plt.plot(self.x_upd_hist[0,:], self.x_upd_hist[2,:], 'r', label='state', alpha=0.5)
+            plt.errorbar(self.z_hist[0,:], self.z_hist[1,:], label='measurement', yerr=y_err, xerr=x_err,  fmt='.k', alpha=0.5)
+            plt.plot(self.x_pred_hist[0,:], self.x_pred_hist[2,:], 'g', label='prediction', alpha=0.5)
+            plt.quiver(self.z_hist[0,:], self.z_hist[1,:], np.cos(self.z_hist[2,:]),  np.sin(self.z_hist[2,:]), alpha=0.6, width = 0.002,scale=25, headwidth=3, headlength=3, color='k')
+            plt.legend()
+            plt.grid()
+            plt.tight_layout()
+            plt.pause(0.05)
+        else:
+            ax.plot(self.x_upd_hist[0,:], self.x_upd_hist[2,:], 'r', label='state', alpha=0.5)
+            ax.errorbar(self.z_hist[0,:], self.z_hist[1,:], label='measurement', yerr=y_err, xerr=x_err,  fmt='.k', alpha=0.5)
+            ax.plot(self.x_pred_hist[0,:], self.x_pred_hist[2,:], 'g', label='prediction', alpha=0.5)
+            ax.quiver(self.z_hist[0,:], self.z_hist[1,:], np.cos(self.z_hist[2,:]),  np.sin(self.z_hist[2,:]), alpha=0.6, width = 0.002,scale=25, headwidth=3, headlength=3, color='k')
+            ax.legend()
+            ax.grid()
+            fig.tight_layout()
+            plt.pause(0.05)
+
 
     def plot_residuals(self):
         residuals = self.x_pred_hist - self.x_upd_hist
@@ -151,18 +159,18 @@ def simulate_mouvement(N = 10, R_std = 2, init_pos = (0,0), init_vel = (1,1)):
 
 
 
-float_formatter = "{:.2f}".format
-np.set_printoptions(formatter={'float_kind':float_formatter})
-noise_std = 0.5
-sensor = sensor_position(pos=(1,0),vel=(1,0))
-zs = simulate_mouvement(N = 50, R_std=noise_std, init_pos=(1,0), init_vel=(1,0.2))
-
-filter = kalman_filter(1, 1, 0, 0, 0, 0)
-print("Initial state: ", filter.x)
-
-for i, z in enumerate(zs):
-    filter.predict()
-    filter.update(z)
-    #print("Step: ", i, "State: ", filter.x)
-filter.plot(y_err=noise_std, x_err=noise_std)
-#filter.plot_residuals()
+#float_formatter = "{:.2f}".format
+#np.set_printoptions(formatter={'float_kind':float_formatter})
+#noise_std = 0.5
+#sensor = sensor_position(pos=(1,0),vel=(1,0))
+#zs = simulate_mouvement(N = 50, R_std=noise_std, init_pos=(1,0), init_vel=(1,0.2))
+#
+#filter = kalman_filter(1, 1, 0, 0, 0, 0)
+#print("Initial state: ", filter.x)
+#
+#for i, z in enumerate(zs):
+#    filter.predict()
+#    filter.update(z)
+#    #print("Step: ", i, "State: ", filter.x)
+#filter.plot(y_err=noise_std, x_err=noise_std)
+##filter.plot_residuals()
