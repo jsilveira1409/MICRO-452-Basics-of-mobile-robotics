@@ -13,10 +13,10 @@ video_capture = None
 #color array with blue, green and red in hsv, for the object contour coloring(in bgr)
 
 #obstacle color boundaries(min, max) black, and the color of the contour
-obst_bound = np.array([[0, 0, 0], [180,255,65], [0, 0 , 200]])
+obst_bound = np.array([[0, 0, 0], [180,150,80], [0, 0 , 200]])
 
 #thymio color boundaries(min,max) yellow and the color of the contour
-robot_bound = np.array([[0, 100, 100], [60, 200,255], [0, 200, 0]])
+robot_bound = np.array([[80, 200, 100], [120, 255,255], [0, 200, 0]])
 
 #goal color boundaries(min,max) red and the color of the contour
 goal_bound = np.array([[140, 100, 100], [210, 255,255], [200, 0, 255]])
@@ -33,9 +33,15 @@ object_colors =   {'obstacle'       : obst_bound,
 # pixel per cm ratio
 ratio = 0
 
+def get_frame():
+    global video_capture
+    ret, frame = video_capture.read()
+    return ret,frame
+
+
 def setup_camera(exposure_time = None):
     #cv2.namedWindow("Computer Vision", cv2.WINDOW_NORMAL)
-
+    global video_capture
     video_capture = cv2.VideoCapture(0,cv2.CAP_DSHOW)
     if not video_capture.isOpened():
         print("Cannot open camera")
@@ -93,7 +99,7 @@ def image_morph_transform(image):
     return transformed_world
 
 
-def object_detection(object, img, img_masked, show_image = False, arc_length_precision = 0.05, min_area = 40, max_area = 400000):
+def object_detection(object, img, img_masked, show_image = False, arc_length_precision = 0.05, min_area = 7000, max_area = 400000):
     centers = []
     areas   = []
     objects = []
@@ -133,8 +139,9 @@ def object_detection(object, img, img_masked, show_image = False, arc_length_pre
     return centers, objects, areas
 
 def computer_vision(img=None, object = None, show_image = False):
+    global video_capture
     if img is None:
-        img = video_capture.read()
+        ret, img = video_capture.read()
 
     img_processed = img.copy()
     # 1. convert to hsv color space
@@ -210,18 +217,19 @@ def cv_start(exposure = None, show_image = False, nb_tries = 5):
             robot_center, robot_contour, _ = computer_vision(frame, 'robot', show_image)
             _, obst_contours, _ = computer_vision(frame, 'obstacle', show_image)
             goal_center, goal_contours, _ = computer_vision(frame, 'goal', show_image)
-            ref_center, ref_contour, _ = computer_vision(frame, 'reference', show_image)        
+            #ref_center, ref_contour, _ = computer_vision(frame, 'reference', show_image)        
 
-        if len(robot_center) == 1 and len(goal_center) == 1 and len(ref_center) == 1:
+        #if len(robot_center) == 1 and len(goal_center) == 1 and len(ref_center) == 1:
+        if len(robot_center) == 1 and len(goal_center) == 1:
             # the reference object is detected, so we can calculate the ratio
             # it is a 7.5cm square object
-            ref_contour = format_contour(ref_contour)
-            for f in ref_contour:
-                ratio += 75 / euclidean(f[0], f[1]) 
-
-            ratio = ratio / len(ref_contour)
-            print("ratio = ", ratio)
-
+            #ref_contour = format_contour(ref_contour)
+            #for f in ref_contour:
+            #    ratio += 75 / euclidean(f[0], f[1]) 
+#
+            #ratio = ratio / len(ref_contour)
+            #print("ratio = ", ratio)
+#
             cv_success = True
             break
         else:
@@ -242,7 +250,7 @@ def cv_start(exposure = None, show_image = False, nb_tries = 5):
             
     #return cv_success, obst_contours, robot_pos, goal_center, frame
     
-    return cv_success, obst_contours, robot_pos, goal_center[0], frame
+    return video_capture, cv_success, obst_contours, robot_pos, goal_center[0], frame
     
 def pixel_to_metric(px_point):
     print(ratio)
@@ -258,7 +266,7 @@ def metric_to_pixel(metric_point):
 
 def draw_path(frame, path):
     for i in range(len(path)-1):
-        cv2.arrowedLine(frame, path[i], path[i+1], (200, 0, 0), 2)
+        cv2.arrowedLine(frame, path[i], path[i+1], (200, 0, 0), 5)
     return frame
 
 

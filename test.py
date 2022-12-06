@@ -16,7 +16,7 @@ def pathing(position_estimate, theta_estimate, target, min_distance = 50):
     speed_l = 0
     speed_r = 0
     # in radians
-    angle_tolerance = 0.17
+    angle_tolerance = 0.30
     # time step(s)
     dt = 0.01
     # counts nb of steps
@@ -100,9 +100,7 @@ def pathing_bis(position_estimate, theta_estimate,  target, speed_l, speed_r, dt
         speed_l = 50
         speed_r = -50
     distance = int(np.sqrt((target[0]-position_estimate[0])**2 + (target[1]-position_estimate[1])**2))
-    #set_speed(speed_l, speed_r)
-    #time.sleep(dt)
-
+    
     return distance, position_estimate, theta_estimate, speed_l, speed_r
     
 
