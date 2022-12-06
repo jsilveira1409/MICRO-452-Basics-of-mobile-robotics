@@ -6,16 +6,14 @@ from dijkstra import compute_shortest_path
 from kalman import kalman_filter
 
 #read_camera(-7)
-cv_successful, obst, robot, goal, frame = cv_start(show_image= True, exposure=-7)
+cv_successful, obst, robot, goal, frame = cv_start(show_image= True)
 plt.imshow(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 obst = format_contour(obst)
-print(robot[:2])
 
-#robot = pixel_to_metric(robot[:2])
+metric_robot = pixel_to_metric(robot[:2])
 print("cv successful: ", cv_successful)
-print("robot : ", robot )
+print("robot : ", robot , metric_robot)
 print("goal  : ", goal)
-
 
 
 if cv_successful:

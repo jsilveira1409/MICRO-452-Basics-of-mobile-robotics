@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 import time
+import copy
 from scipy.spatial.distance import euclidean
 
 
@@ -15,13 +16,13 @@ video_capture = None
 obst_bound = np.array([[0, 0, 0], [180,255,65], [0, 0 , 200]])
 
 #thymio color boundaries(min,max) yellow and the color of the contour
-robot_bound = np.array([[10, 60, 50], [35, 255,255], [0, 200, 0]])
+robot_bound = np.array([[10, 50, 100], [35, 100,255], [0, 200, 0]])
 
 #goal color boundaries(min,max) red and the color of the contour
 goal_bound = np.array([[140, 100, 100], [210, 255,255], [200, 0, 255]])
 
 #ruler color boundaries(min,max) green and the color of the contour
-reference_bound = np.array([[40, 50, 100], [55, 255,255], [200, 255, 0]])
+reference_bound = np.array([[45, 50, 100], [60, 255,255], [200, 255, 0]])
 
 object_colors =   {'obstacle'       : obst_bound, 
                     'robot'         : robot_bound, 
@@ -39,8 +40,8 @@ def setup_camera(exposure_time = None):
     if not video_capture.isOpened():
         print("Cannot open camera")
         exit()
-    video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 720 )
-    video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280 )
+    video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 960)
     if exposure_time != None:
         video_capture.set(cv2.CAP_PROP_EXPOSURE, exposure_time)
     else:
@@ -92,7 +93,7 @@ def image_morph_transform(image):
     return transformed_world
 
 
-def object_detection(object, img, img_masked, show_image = False, arc_length_precision = 0.05, min_area = 3000, max_area = 400000):
+def object_detection(object, img, img_masked, show_image = False, arc_length_precision = 0.05, min_area = 40, max_area = 400000):
     centers = []
     areas   = []
     objects = []
@@ -101,12 +102,12 @@ def object_detection(object, img, img_masked, show_image = False, arc_length_pre
     contours, _ = cv2.findContours(img_masked, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
     for contour in contours:
-        #approximate contour
+        # approximate contour
         epsilon = arc_length_precision * cv2.arcLength(curve = contour, closed = True)
         contour_approximation = cv2.approxPolyDP(contour, epsilon,True)
-        #calculate centroid of each contour approximation
+        # calculate centroid of each contour approximation
         M = cv2.moments(contour_approximation)
-        #moment is zero for open contours (or contours with no area)
+        # moment is zero for open contours (or contours with no area)
         if M['m00'] == 0:       
             continue
         cx = int(M['m10']/M['m00'])
@@ -245,7 +246,9 @@ def cv_start(exposure = None, show_image = False, nb_tries = 10):
     
 def pixel_to_metric(px_point):
     print(ratio)
-    metric_point = px_point * ratio
+    metric_point = copy.deepcopy(px_point)
+    for i in range(len(px_point)):
+        metric_point[i] = px_point[i] * ratio
     return metric_point
 
 def metric_to_pixel(metric_point):
