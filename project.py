@@ -6,7 +6,7 @@ from dijkstra import compute_shortest_path
 from kalman import kalman_filter
 
 #read_camera(-7)
-cv_successful, obst, robot, goal, frame = cv_start(show_image= True)
+cv_successful, obst, robot, goal, frame = cv_start(show_image= True, exposure=-6)
 plt.imshow(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 obst = format_contour(obst)
 

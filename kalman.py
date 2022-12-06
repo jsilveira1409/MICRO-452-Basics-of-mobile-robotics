@@ -8,7 +8,7 @@ import copy
 
 class kalman_filter():
     
-    def __init__(self, x0,vx0, y0, vy0, theta0, vtheta0, dt=1) -> None:
+    def __init__(self, x0, vx0, y0, vy0, theta0, vtheta0, dt=0.01) -> None:
         # initial state vector
         self.x0 = np.array([x0, vx0, y0, vy0, theta0, vtheta0])
         # state variable
@@ -97,7 +97,6 @@ class kalman_filter():
         self.P_upd_hist = np.c_[self.P_upd_hist, self.P]
         self.z_hist = np.c_[self.z_hist, self.z]
         
-
         return self.x, self.P
     
     def plot(self, y_err, x_err, fig=None, ax=None):
@@ -173,4 +172,6 @@ def simulate_mouvement(N = 10, R_std = 2, init_pos = (0,0), init_vel = (1,1)):
 #    filter.update(z)
 #    #print("Step: ", i, "State: ", filter.x)
 #filter.plot(y_err=noise_std, x_err=noise_std)
-##filter.plot_residuals()
+#plt.show()
+#
+#filter.plot_residuals()

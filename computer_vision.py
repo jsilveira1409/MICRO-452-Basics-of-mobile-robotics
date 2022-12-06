@@ -16,7 +16,7 @@ video_capture = None
 obst_bound = np.array([[0, 0, 0], [180,255,65], [0, 0 , 200]])
 
 #thymio color boundaries(min,max) yellow and the color of the contour
-robot_bound = np.array([[10, 50, 100], [35, 100,255], [0, 200, 0]])
+robot_bound = np.array([[0, 100, 100], [60, 200,255], [0, 200, 0]])
 
 #goal color boundaries(min,max) red and the color of the contour
 goal_bound = np.array([[140, 100, 100], [210, 255,255], [200, 0, 255]])
@@ -191,7 +191,7 @@ def format_contour(contours):
     return c
 
 
-def cv_start(exposure = None, show_image = False, nb_tries = 10):
+def cv_start(exposure = None, show_image = False, nb_tries = 5):
     global ratio
     video_capture = setup_camera(exposure)
     # read first 100 frames, to give time to the camera to adapt to the light
