@@ -2,7 +2,7 @@ import numpy as np
 from collections import namedtuple 
 
 INF = 80000
-THYMIO_RADIUS = 190
+THYMIO_RADIUS = 100
 
 #----------------------------------------- AUGMENTING OBSTACLES ---------------------------------------------------------------------------
 def augment(input_points):
@@ -14,6 +14,29 @@ def augment(input_points):
         modif.append(o_n.tolist())
     return modif
     
+
+def move_point(pA,pB,rel):
+    norm = np.sqrt((pB[0]-pA[0])**2 + (pB[1]-pA[1])**2)
+    x_p = (THYMIO_RADIUS/norm)*(pB[0]-pA[0]+pB[1]-pA[1])
+    y_p = (THYMIO_RADIUS/norm)*(pA[0]-pB[0]+pB[1]-pA[1])
+    if rel=='next':
+        return [pA[0]-x_p,pA[1]-y_p]
+    else:
+        return [pA[0]+y_p,pA[1]-x_p]
+
+def augment(input_points):
+    modif = []
+    for o in input_points :
+        new_obs = list()
+        for i in range(len(o)):
+            #augment parallel to prev point
+            new_obs.append(move_point(o[i],o[i-1],'prev'))
+            #augment parallel to next point
+            i_next = (i+1 if i<len(o)-1 else 0)
+            new_obs.append(move_point(o[i],o[i_next],'next'))
+
+        modif.append(new_obs)
+    return modif
 
 #----------------------------------------- GRAPH CONSTRUCTION ---------------------------------------------------------------------------
 
