@@ -35,7 +35,8 @@ class kalman_ext_filter():
         self.A = np.eye(self.states_dim)
         self.B = np.array([ [self.speed_avg * self.dt * np.cos(self.x[2]), self.speed_avg * self.dt * np.cos(self.x[2])],
                             [self.speed_avg * self.dt * np.sin(self.x[2]), self.speed_avg * self.dt * np.sin(self.x[2])],
-                            [-self.dt/WHEEL_DISTANCE                      ,self.dt/WHEEL_DISTANCE] ])
+                            [-self.dt/WHEEL_DISTANCE                      , self.dt/WHEEL_DISTANCE] ])
+                            
         self.R = np.diag([CAMERA_VAR, CAMERA_VAR, CAMERA_ANGLE_VAR])
         self.H = np.eye(self.states_dim)
         self.Q = np.eye(self.control_dim) * self.speed_variance
@@ -51,7 +52,6 @@ class kalman_ext_filter():
         if (prev_time != 0):
             self.dt = start_time - prev_time
         
-
         # prediction
         self.x = self.A.dot(self.x) + self.B.dot(self.u)
         
@@ -75,11 +75,11 @@ class kalman_ext_filter():
     def filter(self, z, current_time):
         self.x_pred, _, next_time = self.predict(current_time)
         self.update(z)
-        if self.x[2] > math.pi:
-            self.x[2] = self.x[2] - 2*math.pi
-        elif self.x[2] < -math.pi:
-            self.x[2] = self.x[2] + 2*math.pi
-        
+        if self.x[2] > np.pi:
+            self.x[2] -= 2*np.pi
+        elif self.x[2] < -np.pi:
+            self.x[2] += 2*np.pi
+
         return self.x, self.P, next_time
 
 #current_time = 0
