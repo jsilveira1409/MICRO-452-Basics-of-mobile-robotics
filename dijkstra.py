@@ -2,7 +2,7 @@ import numpy as np
 from collections import namedtuple 
 
 INF = 80000
-THYMIO_RADIUS = 200
+THYMIO_RADIUS = 190
 
 #----------------------------------------- AUGMENTING OBSTACLES ---------------------------------------------------------------------------
 def augment(input_points):
@@ -164,7 +164,7 @@ def construct_path(start,end,coordlist,pred):
         path_num.append(i)
         coord.append(coordlist[i][0:2])
 
-    #coord.append(start)
+    coord.append(start)
     coord.reverse()
     return coord
 
