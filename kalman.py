@@ -4,99 +4,57 @@ from matplotlib.patches import Ellipse
 import numpy as np
 import scipy.stats
 import copy
+import time
 
+WHEEL_DISTANCE = 95
+SPEED_VAR = 0.1   # check this
+CAMERA_VAR = 0.1  # check this
+CAMERA_ANGLE_VAR = 0.1  # check this
 
-class kalman_filter():
+class kalman_ext_filter():
     
-    def __init__(self, x0, vx0, y0, vy0, theta0, vtheta0, dt=0.01) -> None:
+    def __init__(self, x0, y0, theta0, speed_l, speed_r, ratio, speed_avg = 50,dt = 0.01) -> None:
+        initial_uncertainty = 1500
+        self.speed_variance = SPEED_VAR
+        self.convert_px_to_mm = ratio
         # initial state vector
-        self.x0 = np.array([x0, vx0, y0, vy0, theta0, vtheta0])
+        self.x0 = np.array([x0, y0, theta0])
+        self.dt = dt
+        self.speed_avg = speed_avg
         # state variable
-        self.x = np.array([x0, vx0, y0, vy0, theta0, vtheta0])
-        # posterior state variable
-        self.x_post = np.array([x0, vx0, y0, vy0, theta0, vtheta0])
-        self.P_post = np.zeros((6,6))
-        # history of values
-        self.x_upd_hist = np.zeros((6, 1))
-        self.x_pred_hist = np.zeros((6, 1))
-        self.P_upd_hist = np.zeros((6, 1))
-        self.P_pred_hsit = np.zeros((6, 1))
-        self.z_hist = np.zeros((3, 1))
-        # state transition matrix 
-        self.F = np.array([ [1, dt,  0,  0,  0,  0],
-                            [0,  1,  0,  0,  0,  0],
-                            [0,  0,  1,  dt, 0,  0],
-                            [0,  0,  0,  1,  0,  0],
-                            [0,  0,  0,  0,  1,  dt],
-                            [0,  0,  0,  0,  0,  1]])
-        # measurement matrix 
-        self.H = np.array([ [1, 0, 0, 0, 0, 0],
-                            [0, 0, 1, 0, 0, 0], 
-                            [0, 0, 0, 0, 1, 0]])
-        # measurement noise covariance
-        self.R = np.array([ [3,  0,    0],
-                            [0,  3,    0],
-                            [0,   0,   3]])
-        # process noise covariance 
-        self.Q = 0.01 * np.array([[0.01, 0.1,    0,    0,    0,   0],
-                                 [0.1,    0.25,    0,    0,    0,   0],
-                                 [  0,    0, 0.01,  0.1,    0,   0],
-                                 [  0,    0,  0.1,    0.25,    0,   0],
-                                 [  0,    0,    0,    0, 0.01, 0.1],
-                                 [  0,    0,    0,    0,  0.1,   0.25]])
-        # state covariance matrix
-        # since we are uncertain about the initial state,
-        # we set the initial state covariance matrix to a high value
-        # which is equivalent of increasing the uncertainty
-        self.P = 100 * np.array([  [1, 0, 0, 0, 0, 0],
-                                   [0, 1, 0, 0, 0, 0],       
-                                   [0, 0, 1, 0, 0, 0],
-                                   [0, 0, 0, 1, 0, 0],
-                                   [0, 0, 0, 0, 1, 0],
-                                   [0, 0, 0, 0, 0, 1]])
-        # control input matrix
-        self.B = np.array([ [1, 0, 0],
-                            [0, 0, 0],
-                            [0, 1, 0],
-                            [0, 0, 0],
-                            [0, 0, 1],
-                            [0, 0, 0]])
-        # control input
-        self.u = np.array([0, 0, 0]).T
-        # measurement
-        self.z = np.array([0, 0, 0]).T
-        # residual between measurement and prediction
-        self.y = np.array([0, 0, 0]).T
-        # kalman gain
-        self.K = np.zeros((6, 3))
+        self.x = np.array([x0, y0, theta0], dtype=float)
+        self.u = np.array([speed_l, speed_r], dtype=float)
+        self.P = np.eye(3) * initial_uncertainty
+
+        self.control_dim = len(self.u)
+        self.states_dim = len(self.x)
+        # matrix definitions
+        self.A = np.eye(self.states_dim)
+        self.B = np.array([ [self.speed_avg * self.dt * np.cos(self.x[2]), self.speed_avg * self.dt * np.cos(self.x[2])],
+                            [self.speed_avg * self.dt * np.sin(self.x[2]), self.speed_avg * self.dt * np.sin(self.x[2])],
+                            [self.dt/WHEEL_DISTANCE                      ,-self.dt/WHEEL_DISTANCE] ])
+        self.R = np.diag([CAMERA_VAR, CAMERA_VAR, CAMERA_ANGLE_VAR])
+        self.H = np.eye(self.states_dim)
+        self.Q = np.eye(self.control_dim) * self.speed_variance
+        
         pass
   
 
     def predict(self):
-        # extrapolate state
-        self.x = np.dot(self.F, self.x) + np.dot(self.B, self.u)
-        # extrapolate state covariance(uncertanity?)
-        self.P = np.dot(np.dot(self.F, self.P), self.F.T) + self.Q
-        self.x_pred_hist = np.c_[self.x_pred_hist, self.x]
-        self.P_pred_hsit = np.c_[self.P_pred_hsit, self.P]
+        # convert to metrics
+        self.x[0] = self.x[0] * self.convert_px_to_mm
+        self.x[1] = self.x[1] * self.convert_px_to_mm
+        # prediction
+        self.x = self.A.dot(self.x) + self.B.dot(self.u)
+        
+        self.P = self.B.dot(self.Q).dot(self.B.T) + self.P
+
         return self.x, self.P  
 
     def update(self, z):
-        # residual
-        self.y = z - self.H.dot(self.x)
-        # kalman gain
-        self.K = np.dot(self.P, self.H.T).dot(np.linalg.inv(np.dot(np.dot(self.H, self.P), self.H.T) + self.R))
-        # state update
-        self.x = self.x + self.K.dot(self.y)
-        # state covariance update
-        tmp = np.eye(6) - self.K.dot(self.H)
-        self.P = np.dot(tmp.dot(self.P),tmp.T) + self.K.dot(self.R).dot(self.K.T)
-        # save posterioir state and measurement
-        self.z = copy.deepcopy(z)
-        self.x_upd_hist = np.c_[self.x_upd_hist, self.x]
-        self.P_upd_hist = np.c_[self.P_upd_hist, self.P]
-        self.z_hist = np.c_[self.z_hist, self.z]
         
+
+
         return self.x, self.P
     
     def plot(self, y_err, x_err, fig=None, ax=None):

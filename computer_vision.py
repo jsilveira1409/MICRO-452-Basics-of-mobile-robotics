@@ -6,10 +6,11 @@ import time
 import copy
 from scipy.spatial.distance import euclidean
 
-
+CAMERA_WIDTH = 1280
+CAMERA_HEIGHT = 960
+PIXEL_TO_MM = 0.77
 font = cv2.FONT_HERSHEY_SIMPLEX
-# camera control
-video_capture = None
+
 #color array with blue, green and red in hsv, for the object contour coloring(in bgr)
 
 #obstacle color boundaries(min, max) black, and the color of the contour
@@ -33,29 +34,23 @@ object_colors =   {'obstacle'       : obst_bound,
 # pixel per cm ratio
 ratio = 0
 
-def get_frame():
-    global video_capture
-    ret, frame = video_capture.read()
-    return ret,frame
 
-
-def setup_camera(exposure_time = None):
+def setup_camera(video_capture, exposure_time = None):
     #cv2.namedWindow("Computer Vision", cv2.WINDOW_NORMAL)
-    global video_capture
-    video_capture = cv2.VideoCapture(0,cv2.CAP_DSHOW)
+    #video_capture = cv2.VideoCapture(0,cv2.CAP_DSHOW)
     if not video_capture.isOpened():
         print("Cannot open camera")
         exit()
-    video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280 )
-    video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 960)
+    video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH )
+    video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT)
     if exposure_time != None:
         video_capture.set(cv2.CAP_PROP_EXPOSURE, exposure_time)
     else:
         video_capture.set(cv2.CAP_PROP_AUTO_EXPOSURE,3)   
-    return video_capture
+    
 
-def read_camera(exp = None):
-    vid = setup_camera(exposure_time = exp)
+def read_camera(video_capture, exp = None):
+    vid = setup_camera(video_capture, exposure_time = exp)
     
     while(True):
         ret, frame = vid.read()
@@ -198,9 +193,9 @@ def format_contour(contours):
     return c
 
 
-def cv_start(exposure = None, show_image = False, nb_tries = 5):
+def cv_start(video_capture, exposure = None, show_image = False, nb_tries = 5):
     global ratio
-    video_capture = setup_camera(exposure)
+    setup_camera(video_capture, exposure)
     # read first 100 frames, to give time to the camera to adapt to the light
     video_capture.read(300)
     robot_center = []
@@ -218,7 +213,7 @@ def cv_start(exposure = None, show_image = False, nb_tries = 5):
             _, obst_contours, _ = computer_vision(frame, 'obstacle', show_image)
             goal_center, goal_contours, _ = computer_vision(frame, 'goal', show_image)
             #ref_center, ref_contour, _ = computer_vision(frame, 'reference', show_image)        
-
+            
         #if len(robot_center) == 1 and len(goal_center) == 1 and len(ref_center) == 1:
         if len(robot_center) == 1 and len(goal_center) == 1:
             # the reference object is detected, so we can calculate the ratio
@@ -250,24 +245,24 @@ def cv_start(exposure = None, show_image = False, nb_tries = 5):
             
     #return cv_success, obst_contours, robot_pos, goal_center, frame
     
-    return video_capture, cv_success, obst_contours, robot_pos, goal_center[0], frame
+    return cv_success, obst_contours, robot_pos, goal_center[0], frame
     
 def pixel_to_metric(px_point):
-    print(ratio)
-    metric_point = copy.deepcopy(px_point)
-    for i in range(len(px_point)):
-        metric_point[i] = px_point[i] * ratio
+    metric_point = np.array(px_point) * PIXEL_TO_MM
     return metric_point
-
-def metric_to_pixel(metric_point):
-    px_point = metric_point / ratio
-    return px_point
 
 
 def draw_path(frame, path):
     for i in range(len(path)-1):
         cv2.arrowedLine(frame, path[i], path[i+1], (200, 0, 0), 5)
     return frame
+
+
+def invert_coordinates(point):
+    return [point[0], CAMERA_HEIGHT - point[1]]
+
+
+
 
 
     #if show_image:
@@ -303,6 +298,7 @@ def draw_path(frame, path):
 #ax[0,2].set_title('Smoothed Image')
 #ax[1,0].imshow(mask)
 #ax[1,0].set_title('Mask')
+
 #ax[1,1].imshow(img_processed)
 #ax[1,1].set_title('Segmented Image')
 #ax[1,2].imshow(img_processed)
