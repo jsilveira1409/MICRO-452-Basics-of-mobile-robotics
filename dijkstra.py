@@ -2,7 +2,7 @@ import numpy as np
 from collections import namedtuple 
 
 INF = 80000
-THYMIO_RADIUS = 100
+THYMIO_RADIUS = 150
 
 #----------------------------------------- AUGMENTING OBSTACLES ---------------------------------------------------------------------------
 def augment(input_points):

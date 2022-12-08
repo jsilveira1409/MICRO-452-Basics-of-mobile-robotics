@@ -6,7 +6,7 @@ import time
 import copy
 from scipy.spatial.distance import euclidean
 
-CAMERA_WIDTH = 1280
+CAMERA_WIDTH = 1720
 CAMERA_HEIGHT = 960
 PIXEL_TO_MM = 0.73826
 font = cv2.FONT_HERSHEY_SIMPLEX
@@ -251,16 +251,19 @@ def pixel_to_metric(px_point):
     metric_point = np.array(px_point) * PIXEL_TO_MM
     return metric_point
 
+def metric_to_pixel(metric_point):
+    px_point = np.array(metric_point) / PIXEL_TO_MM
+    return px_point
 
 def draw_path(frame, path):
     for i in range(len(path)-1):
         cv2.arrowedLine(frame, path[i], path[i+1], (200, 0, 0), 5)
     return frame
 
-
 def invert_coordinates(point):
     return [point[0], CAMERA_HEIGHT - point[1]]
-
+def revert_coordinates(point):
+    return [point[0], CAMERA_HEIGHT + point[1]]
 
 
 
