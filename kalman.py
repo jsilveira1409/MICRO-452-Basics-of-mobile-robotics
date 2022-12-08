@@ -50,6 +50,7 @@ class kalman_ext_filter():
             
         if (prev_time != 0):
             self.dt = start_time - prev_time
+            
         
         # prediction
         self.x = self.A.dot(self.x) + self.B.dot(self.u)
@@ -73,12 +74,13 @@ class kalman_ext_filter():
     
     def filter(self, z, current_time):
         self.x_pred, _, next_time = self.predict(current_time)
-        self.update(z)
+
         if self.x[2] > np.pi:
             self.x[2] -= 2*np.pi
         elif self.x[2] < -np.pi:
             self.x[2] += 2*np.pi
 
+        self.update(z)
         return self.x, self.P, next_time
 
 #current_time = 0
