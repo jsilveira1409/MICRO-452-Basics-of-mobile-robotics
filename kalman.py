@@ -6,16 +6,16 @@ import math
 import time
 
 WHEEL_DISTANCE = 95
-SPEED_VAR = 0.0000001              #in mm^2/s^2        CHECK THIS
-CAMERA_VAR = 0.0000001           #in mm^2            CHECK THIS
+SPEED_VAR = 18.66              #in mm^2/s^2        CHECK THIS
+CAMERA_VAR = 0.04           #in mm^2            CHECK THIS
 ROBOT_LENGTH = 60           #in mm              CHECK THIS
-CAMERA_ANGLE_VAR =  0.000000001        #1/(ROBOT_LENGTH*4)**2   #in rad^2    CHECK THIS
+CAMERA_ANGLE_VAR =  1/(ROBOT_LENGTH*4)**2   #in rad^2    CHECK THIS
 
 
 class kalman_ext_filter():
     
-    def __init__(self, x0, y0, theta0, speed_l, speed_r, dt = 0.01) -> None:
-        initial_uncertainty = 400
+    def __init__(self, x0, y0, theta0, speed_l, speed_r, dt = 0.2) -> None:
+        initial_uncertainty = 5000
         self.speed_variance = SPEED_VAR
         # initial state vector
         self.x0 = np.array([x0, y0, theta0])
@@ -23,7 +23,7 @@ class kalman_ext_filter():
         # state variable
         self.x = np.array([x0, y0, theta0], dtype=float)
         self.z = np.array([0,0,0],  dtype=float)
-        self.x_pred = np.array([x0, y0, theta0], dtype=float)
+        self.x_pred = np.array([0,0,0], dtype=float)
         self.u = np.array([speed_l, speed_r], dtype=float)
         self.P = np.eye(3) * initial_uncertainty
 
@@ -49,7 +49,7 @@ class kalman_ext_filter():
         start_time = time.time()
             
         if (prev_time != 0):
-            self.dt = start_time - prev_time
+            self.dt = round(start_time - prev_time, 4)
             
         
         # prediction
@@ -60,7 +60,7 @@ class kalman_ext_filter():
         return self.x, self.P,  start_time 
 
     def update(self, z):
-        self.z = z
+        
         self.I = self.z - self.x
         self.S = self.H.dot(self.P).dot(self.H.T) + self.R
         # Kalman gain
@@ -69,19 +69,77 @@ class kalman_ext_filter():
         self.x = self.x + self.K.dot(self.I)
         # update covariance
         self.P = self.P - self.K.dot(self.H).dot(self.P)
-
+        
+        self.z = z
         return self.x, self.P
     
     def filter(self, z, current_time):
-        self.x_pred, _, next_time = self.predict(current_time)
-
         if self.x[2] > np.pi:
             self.x[2] -= 2*np.pi
         elif self.x[2] < -np.pi:
             self.x[2] += 2*np.pi
 
-        self.update(z)
-        return self.x, self.P, next_time
+        self.x_pred, _, next_time = self.predict(current_time)
+
+        
+        self.x, self.P = self.update(z)
+        return self.x, self.P, self.x_pred, next_time
+
+
+
+# function version
+
+def kalman_predict(previous_time, x, u, P):  
+        start_time = time.time()
+            
+        if (previous_time != 0):
+            dt = round(start_time - previous_time, 4)
+        else:  
+            dt = 0.2
+        
+        states_dim = len(x)     # x, y, theta
+        control_dim = len(u)
+        
+        A = np.eye(states_dim)
+        B = np.array([[0.5 * dt * np.cos(x[2]),     0.5 * dt * np.cos(x[2])], 
+                  [0.5 * dt * np.sin(x[2]),     0.5 * dt * np.sin(x[2])],
+                  [ dt / ROBOT_LENGTH,          -dt / ROBOT_LENGTH]])
+ 
+        x = B.dot(u) + A.dot(x) 
+        Q = SPEED_VAR * np.eye(control_dim)
+        P = B.dot(Q).dot(B.T)
+
+        return start_time, x, P
+
+def kalman_update(x, u, z, P, sensor_available):
+    R = np.diag([CAMERA_VAR, CAMERA_VAR, CAMERA_ANGLE_VAR])
+    states_dim = len(x) 
+    
+    if sensor_available == True : H = np.eye(states_dim)
+    else : H = np.zeros((states_dim, states_dim))
+
+    I = z - x
+    S = R + H.dot(P).dot(H.T) 
+    K_gain = P.dot(H.T).dot(np.linalg.inv(S)) 
+    x = x + K_gain.dot(I)
+    P = P - K_gain.dot(H).dot(P)
+
+    return x, P
+    
+
+def kalman_filter(sensor_data_available, x, u, z, P , previous_time):
+
+    x_kal, P, next_time = kalman_predict(previous_time, x, u, P)
+    x_predicted = x_kal
+    x_kal, P = kalman_update(x, u, z, P, sensor_data_available)
+
+    return next_time, x_kal, P, x_predicted
+
+
+
+
+
+
 
 #current_time = 0
 #x_pred = [0,0,0]

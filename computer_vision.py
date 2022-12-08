@@ -8,7 +8,7 @@ from scipy.spatial.distance import euclidean
 
 CAMERA_WIDTH = 1280
 CAMERA_HEIGHT = 960
-PIXEL_TO_MM = 0.859
+PIXEL_TO_MM = 0.73826
 font = cv2.FONT_HERSHEY_SIMPLEX
 
 #color array with blue, green and red in hsv, for the object contour coloring(in bgr)
