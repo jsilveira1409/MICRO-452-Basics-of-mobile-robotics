@@ -103,11 +103,11 @@ def kalman_predict(previous_time, x, u, P):
         A = np.eye(states_dim)
         B = np.array([[0.5 * dt * np.cos(x[2]),     0.5 * dt * np.cos(x[2])], 
                   [0.5 * dt * np.sin(x[2]),     0.5 * dt * np.sin(x[2])],
-                  [ dt / ROBOT_LENGTH,          -dt / ROBOT_LENGTH]])
+                  [ dt / ROBOT_LENGTH,          -dt / ROBOT_LENGTH]], dtype='float')
  
         x = B.dot(u) + A.dot(x) 
         Q = SPEED_VAR * np.eye(control_dim)
-        P = B.dot(Q).dot(B.T)
+        P = B.dot(Q).dot(B.T) + P
 
         return start_time, x, P
 
@@ -119,7 +119,7 @@ def kalman_update(x, u, z, P, sensor_available):
     else : H = np.zeros((states_dim, states_dim))
 
     I = z - x
-    S = R + H.dot(P).dot(H.T) 
+    S = H.dot(P).dot(H.T)  + R
     K_gain = P.dot(H.T).dot(np.linalg.inv(S)) 
     x = x + K_gain.dot(I)
     P = P - K_gain.dot(H).dot(P)
@@ -129,11 +129,13 @@ def kalman_update(x, u, z, P, sensor_available):
 
 def kalman_filter(sensor_data_available, x, u, z, P , previous_time):
 
-    x_kal, P, next_time = kalman_predict(previous_time, x, u, P)
+    next_time, x_kal, P  = kalman_predict(previous_time, x, u, P)
     x_predicted = x_kal
     x_kal, P = kalman_update(x, u, z, P, sensor_data_available)
 
     return next_time, x_kal, P, x_predicted
+
+
 
 
 
