@@ -6,21 +6,20 @@ import math
 import time
 
 WHEEL_DISTANCE = 95
-SPEED_VAR = 0.0001              #in mm^2/s^2        CHECK THIS
-CAMERA_VAR = 0.0001           #in mm^2            CHECK THIS
+SPEED_VAR = 0.0000001              #in mm^2/s^2        CHECK THIS
+CAMERA_VAR = 0.0000001           #in mm^2            CHECK THIS
 ROBOT_LENGTH = 60           #in mm              CHECK THIS
-CAMERA_ANGLE_VAR =  0.000001        #1/(ROBOT_LENGTH*4)**2   #in rad^2    CHECK THIS
+CAMERA_ANGLE_VAR =  0.000000001        #1/(ROBOT_LENGTH*4)**2   #in rad^2    CHECK THIS
 
 
 class kalman_ext_filter():
     
-    def __init__(self, x0, y0, theta0, speed_l, speed_r, speed_avg = 50, dt = 0.01) -> None:
-        initial_uncertainty = 1
+    def __init__(self, x0, y0, theta0, speed_l, speed_r, dt = 0.01) -> None:
+        initial_uncertainty = 400
         self.speed_variance = SPEED_VAR
         # initial state vector
         self.x0 = np.array([x0, y0, theta0])
         self.dt = dt
-        self.speed_avg = speed_avg
         # state variable
         self.x = np.array([x0, y0, theta0], dtype=float)
         self.z = np.array([0,0,0],  dtype=float)
@@ -33,8 +32,8 @@ class kalman_ext_filter():
         self.states_dim = len(self.x)
         # matrix definitions
         self.A = np.eye(self.states_dim)
-        self.B = np.array([ [self.speed_avg * self.dt * np.cos(self.x[2]), self.speed_avg * self.dt * np.cos(self.x[2])],
-                            [self.speed_avg * self.dt * np.sin(self.x[2]), self.speed_avg * self.dt * np.sin(self.x[2])],
+        self.B = np.array([ [ 0.5 * self.dt * np.cos(self.x[2]), 0.5 * self.dt * np.cos(self.x[2])],        # porque tem que multiplicar por 0.5?
+                            [ 0.5 * self.dt * np.sin(self.x[2]), 0.5 * self.dt * np.sin(self.x[2])],        # pra fazer uma media entre velocidade direita esquerda?    
                             [-self.dt/WHEEL_DISTANCE                      , self.dt/WHEEL_DISTANCE] ])
                             
         self.R = np.diag([CAMERA_VAR, CAMERA_VAR, CAMERA_ANGLE_VAR])
