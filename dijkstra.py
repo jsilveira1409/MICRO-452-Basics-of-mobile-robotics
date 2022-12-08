@@ -5,7 +5,7 @@ INF = 80000
 THYMIO_RADIUS = 100
 
 #----------------------------------------- AUGMENTING OBSTACLES ---------------------------------------------------------------------------
-def augment_old(input_points):
+def augment(input_points):
     modif = []
     for o in input_points :
         o_n = np.array(o)
@@ -13,30 +13,7 @@ def augment_old(input_points):
         o_n = o_n + THYMIO_RADIUS*(o_n-center)/np.transpose([np.linalg.norm(o_n-center, axis=1),np.linalg.norm(o_n-center, axis=1)])
         modif.append(o_n.tolist())
     return modif
-
-def move_point(pA,pB,rel):
-    norm = np.sqrt((pB[0]-pA[0])**2 + (pB[1]-pA[1])**2)
-    x_p = (THYMIO_RADIUS/norm)*(pB[0]-pA[0]+pB[1]-pA[1])
-    y_p = (THYMIO_RADIUS/norm)*(pA[0]-pB[0]+pB[1]-pA[1])
-    if rel=='next':
-        return [pA[0]-x_p,pA[1]-y_p]
-    else:
-        return [pA[0]+y_p,pA[1]-x_p]
-
-def augment(input_points):
-    modif = []
-    for o in input_points :
-        new_obs = list()
-        for i in range(len(o)):
-            #augment parallel to next point
-            i_next = (i+1 if i<len(o)-1 else 0)
-            
-            new_obs.append(move_point(o[i],o[i_next],'next'))
-            #augment parallel to prev point
-            new_obs.append(move_point(o[i],o[i-1],'prev'))
-
-        modif.append(new_obs)
-    return modif
+    
 
 def move_point(pA,pB,rel):
     norm = np.sqrt((pB[0]-pA[0])**2 + (pB[1]-pA[1])**2)
@@ -225,20 +202,16 @@ def compute_shortest_path(input_ar,start,end):
     return path
 
 #----------------------------------------------- INPUTS ------------------------------------------------------------------------
-# input_ar = [[[5.0,3.0],[8,3],[8,6],[5,4]],
+#input_ar = [[[5.0,3.0],[8,3],[8,6],[5,4]],
 #            [[8,13],[7,12],[8,10],[9,11]],
 #            [[4,9],[2,10],[4,12]]]
-
-# A = [1,1]
-# B = [9,14]    
+#
+#A = [1,1]
+#B = [9,14]    
 
 #----------------------------------------------- TEST STUFF ------------------------------------------------------------------------
 
-
-'''print(move_point([7,6],[1,6],'prev'))
-print(move_point([7,6],[4,3],'next'))'''
-
-#print(compute_shortest_path(input_ar,A,B))
+#compute_shortest_path(input_ar,A,B)
 '''flat = [p for obs in input_ar for p in obs]
 number_vertices(input_ar)
 g = construct_graph(input_ar,A,B)
