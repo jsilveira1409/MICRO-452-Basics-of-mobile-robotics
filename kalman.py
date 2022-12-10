@@ -6,7 +6,7 @@ import math
 import time
 #
 WHEEL_DISTANCE = 95
-SPEED_VAR = 30              #in mm^2/s^2        CHECK THIS
+SPEED_VAR = 20              #in mm^2/s^2        CHECK THIS
 CAMERA_VAR = 0.01           #in mm^2            CHECK THIS
 ROBOT_LENGTH = 60           #in mm              CHECK THIS
 CAMERA_ANGLE_VAR =  0.01  #in rad^2    CHECK THIS

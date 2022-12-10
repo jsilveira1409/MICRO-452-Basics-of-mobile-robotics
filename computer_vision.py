@@ -6,8 +6,8 @@ import time
 import copy
 from scipy.spatial.distance import euclidean
 
-CAMERA_WIDTH = 1720
-CAMERA_HEIGHT = 1280
+CAMERA_WIDTH = 1080
+CAMERA_HEIGHT = 720
 PIXEL_TO_MM = 220/380
 font = cv2.FONT_HERSHEY_SIMPLEX
 
@@ -94,7 +94,7 @@ def image_morph_transform(image):
     return transformed_world
 
 
-def object_detection(object, img, img_masked, show_image = False, arc_length_precision = 0.05, min_area = 5000, max_area = 400000):
+def object_detection(object, img, img_masked, show_image = False, arc_length_precision = 0.05, min_area = 1000, max_area = 400000):
     centers = []
     areas   = []
     objects = []
