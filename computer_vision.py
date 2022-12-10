@@ -7,8 +7,10 @@ import copy
 from scipy.spatial.distance import euclidean
 
 CAMERA_WIDTH = 1720
-CAMERA_HEIGHT = 960
-PIXEL_TO_MM = 0.73826
+CAMERA_HEIGHT =620
+# mm/pixel ratio (tamanho da regua sobre o seu tamanho en pixel)
+#PIXEL_TO_MM = 220/295
+PIXEL_TO_MM = 295/220
 font = cv2.FONT_HERSHEY_SIMPLEX
 
 #color array with blue, green and red in hsv, for the object contour coloring(in bgr)
@@ -94,7 +96,7 @@ def image_morph_transform(image):
     return transformed_world
 
 
-def object_detection(object, img, img_masked, show_image = False, arc_length_precision = 0.05, min_area = 7000, max_area = 400000):
+def object_detection(object, img, img_masked, show_image = False, arc_length_precision = 0.05, min_area = 2000, max_area = 400000):
     centers = []
     areas   = []
     objects = []
@@ -266,47 +268,10 @@ def revert_coordinates(point):
     return [point[0], CAMERA_HEIGHT + point[1]]
 
 
-
-
-    #if show_image:
-    #    # show the frames
-    #    cv2.imshow('Computer Vision', frame)
-    #    while True:
-    #        if cv2.waitKey(1) & 0xFF == ord('q'):
-    #            break
-    #    
-    #    # Release the capture
-    #    video_capture.release() 
-    #    cv2.destroyAllWindows()
-        
-
-#
-##read image as rgb
-#img = cv2.imread('test.jpg')
-#img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-#fig, ax = plt.subplots(2, 3, figsize=(20, 10))
-#
-#img_processed = img.copy()
-#img_hsv = cv2.cvtColor(img_processed, cv2.COLOR_BGR2HSV)
-#img_smooth = image_smoothing(img_hsv)
-#mask = object_mask('robot', img_smooth)
-#centers, contours, areas = object_detection('robot', img_processed, mask)
-#
-##plot images
-#ax[0,0].imshow(img)
-#ax[0,0].set_title('Original Image')
-#ax[0,1].imshow(img_hsv)
-#ax[0,1].set_title('HSV Image')
-#ax[0,2].imshow(img_smooth)
-#ax[0,2].set_title('Smoothed Image')
-#ax[1,0].imshow(mask)
-#ax[1,0].set_title('Mask')
-
-#ax[1,1].imshow(img_processed)
-#ax[1,1].set_title('Segmented Image')
-#ax[1,2].imshow(img_processed)
-#ax[1,2].set_title('Segmented Image')
-#
-#fig.tight_layout()
-#fig.savefig('data1.jpeg')
-#
+if __name__ == "__main__":
+    # initialize the camera
+    video_capture = cv2.VideoCapture(0)
+    ret, frame = video_capture.read()
+    print(ret)
+    cv2.imshow(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+    cv2.imwrite('frame.jpeg', frame)

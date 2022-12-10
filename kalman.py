@@ -6,10 +6,10 @@ import math
 import time
 #
 WHEEL_DISTANCE = 95
-SPEED_VAR = 18.66              #in mm^2/s^2        CHECK THIS
-CAMERA_VAR = 0.04           #in mm^2            CHECK THIS
-ROBOT_LENGTH = 60           #in mm              CHECK THIS
-CAMERA_ANGLE_VAR =  1/(ROBOT_LENGTH*4)**2   #in rad^2    CHECK THIS
+SPEED_VAR = 25              #in mm^2/s^2        CHECK THIS
+CAMERA_VAR = 0.001           #in mm^2            CHECK THIS
+ROBOT_LENGTH = 60          #in mm              CHECK THIS
+CAMERA_ANGLE_VAR =  0.1   #in rad^2    CHECK THIS
 #
 #
 #class kalman_ext_filter():
