@@ -7,14 +7,14 @@ import copy
 from scipy.spatial.distance import euclidean
 
 CAMERA_WIDTH = 1720
-CAMERA_HEIGHT = 960
-PIXEL_TO_MM = 0.73826
+CAMERA_HEIGHT = 1280
+PIXEL_TO_MM = 220/380
 font = cv2.FONT_HERSHEY_SIMPLEX
 
 #color array with blue, green and red in hsv, for the object contour coloring(in bgr)
 
 #obstacle color boundaries(min, max) black, and the color of the contour
-obst_bound = np.array([[0, 0, 0], [180,150,80], [0, 0 , 200]])
+obst_bound = np.array([[0, 0, 0], [180,150,65], [0, 0 , 200]])
 
 #thymio color boundaries(min,max) yellow and the color of the contour
 robot_bound = np.array([[80, 200, 100], [120, 255,255], [0, 200, 0]])
@@ -94,7 +94,7 @@ def image_morph_transform(image):
     return transformed_world
 
 
-def object_detection(object, img, img_masked, show_image = False, arc_length_precision = 0.05, min_area = 7000, max_area = 400000):
+def object_detection(object, img, img_masked, show_image = False, arc_length_precision = 0.05, min_area = 5000, max_area = 400000):
     centers = []
     areas   = []
     objects = []
@@ -233,6 +233,7 @@ def cv_start(video_capture, exposure = None, show_image = False, nb_tries = 5):
             print(cnt)
             if cnt > nb_tries:
                 print("Either the robot or the goal is not visible/detectable")
+                print("robot ", len(robot_center), "goal ", len(goal_center))
                 break
 
 
