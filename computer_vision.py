@@ -14,7 +14,7 @@ font = cv2.FONT_HERSHEY_SIMPLEX
 #color array with blue, green and red in hsv, for the object contour coloring(in bgr)
 
 #obstacle color boundaries(min, max) black, and the color of the contour
-obst_bound = np.array([[0, 0, 0], [180,150,65], [0, 0 , 200]])
+obst_bound = np.array([[0, 0, 0], [180,150,80], [0, 0 , 200]])
 
 #thymio color boundaries(min,max) yellow and the color of the contour
 robot_bound = np.array([[80, 200, 100], [120, 255,255], [0, 200, 0]])
