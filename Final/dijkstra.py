@@ -5,16 +5,6 @@ INF = 80000
 THYMIO_RADIUS = 150
 
 #----------------------------------------- AUGMENTING OBSTACLES ---------------------------------------------------------------------------
-def augment(input_points):
-    modif = []
-    for o in input_points :
-        o_n = np.array(o)
-        center = np.mean(o_n,axis=0)
-        o_n = o_n + THYMIO_RADIUS*(o_n-center)/np.transpose([np.linalg.norm(o_n-center, axis=1),np.linalg.norm(o_n-center, axis=1)])
-        modif.append(o_n.tolist())
-    return modif
-    
-
 def move_point(pA,pB,rel):
     norm = np.sqrt((pB[0]-pA[0])**2 + (pB[1]-pA[1])**2)
     x_p = (THYMIO_RADIUS/norm)*(pB[0]-pA[0]+pB[1]-pA[1])
