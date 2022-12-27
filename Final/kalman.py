@@ -5,10 +5,10 @@ import numpy as np
 import time
 
 WHEEL_DISTANCE = 95
-SPEED_VAR = 40              #in mm^2/s^2        CHECK THIS
-CAMERA_VAR = 0.05           #in mm^2            CHECK THIS
+SPEED_VAR = 15              #in mm^2/s^2        CHECK THIS
+CAMERA_VAR = 0.001           #in mm^2            CHECK THIS
 ROBOT_LENGTH = 60           #in mm              CHECK THIS
-CAMERA_ANGLE_VAR =  0.0025  #in rad^2    CHECK THIS
+CAMERA_ANGLE_VAR =  0.0001  #in rad^2    CHECK THIS
 
 
 def kalman_predict(previous_time, x, u, P):  

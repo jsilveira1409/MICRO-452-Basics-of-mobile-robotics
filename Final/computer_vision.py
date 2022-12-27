@@ -6,21 +6,22 @@ import time
 import copy
 from scipy.spatial.distance import euclidean
 
-CAMERA_WIDTH = 1080
-CAMERA_HEIGHT = 720
-PIXEL_TO_MM = 315/390
+CAMERA_WIDTH = 1024
+CAMERA_HEIGHT = 768
+PIXEL_TO_MM = 220/240
 font = cv2.FONT_HERSHEY_SIMPLEX
 
 #color array with blue, green and red in hsv, for the object contour coloring(in bgr)
 
 #obstacle color boundaries(min, max) black, and the color of the contour
-obst_bound = np.array([[0, 0, 0], [180,220,80], [0, 0 , 200]])
+obst_bound = np.array([[0, 0, 0], [180,220,90], [0, 0 , 200]])
 
 #thymio color boundaries(min,max) yellow and the color of the contour
 robot_bound = np.array([[80, 200, 100], [120, 255,255], [0, 200, 0]])
 
 #goal color boundaries(min,max) red and the color of the contour
-goal_bound = np.array([[130, 100, 70], [220, 255,255], [200, 0, 255]])
+#goal_bound = np.array([[130, 100, 70], [220, 255,255], [200, 0, 255]])
+goal_bound = np.array([[100, 100, 70], [220, 255,255], [200, 0, 255]])
 
 #ruler color boundaries(min,max) green and the color of the contour
 reference_bound = np.array([[45, 50, 100], [60, 255,255], [200, 255, 0]])
